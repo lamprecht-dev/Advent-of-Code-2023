@@ -1,34 +1,34 @@
-import functools
+import numpy
 
 from utils import *
 
 
 def solve(d):
     ll = lines(d)
-    limit = {"red": 12, "green": 13, "blue": 14}
     add_totals = 0
     power = 0
 
     for line in ll:
         (game, rest) = line.lstrip("Game ").split(": ")
         game = int(game)
-        groups = list(map(lambda g: tuple(map(lambda v: v.split(" "), g.split(", "))), rest.split("; ")))
+        groups = rest.split("; ")
         valid = True
         fewest = {"red": 0, "blue": 0, "green": 0}
 
         for group in groups:
             count = {"red": 0, "blue": 0, "green": 0}
-            for item in group:
+            for group_item in group.split(", "):
+                item = group_item.split()
                 count[item[1]] += int(item[0])
                 fewest[item[1]] = max(fewest[item[1]], int(item[0]))
-            for key in count:
-                if limit[key] < count[key]:
-                    valid = False
-                    break
+            if count["red"] > 12 or count["green"] > 13 or count["blue"] > 14:
+                valid = False
+
         if valid:
             add_totals += game
 
-        power += functools.reduce(lambda a, b: a*b, fewest.values())
+        # power += functools.reduce(lambda a, b: a*b, fewest.values())  Numpy is a bit easier to write
+        power += numpy.prod(list(fewest.values()))
 
     return add_totals, power
 
