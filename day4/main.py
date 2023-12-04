@@ -1,3 +1,4 @@
+from collections import defaultdict
 from utils import *
 
 
@@ -5,31 +6,23 @@ def solve(d):
     scratch_score = 0
     total_cards = 0
 
-    scratch_values = []
-    scratch_counts = []
+    scratch_counts = defaultdict(int)
 
     ll = lines(d)
-    for line in ll:
+    for i, line in enumerate(ll):
         _, data = line.split(": ")
         winning, mine = data.split(" | ")
         winning = list(map(lambda x: int(x), winning.split()))
         mine = set(map(lambda x: int(x), mine.split()))
-        count = 0
-        for w in winning:
-            if w in mine:
-                count += 1
-        score = math.floor(pow(2, count - 1))
+        count = sum(w in mine for w in winning)
+        if count > 0:
+            scratch_score += 2 ** (count - 1)
 
-        scratch_values.append(count)
-        scratch_counts.append(1)
-        total_cards += 1
-        scratch_score += score
-
-    for i, c in enumerate(scratch_values):
-        for j in range(c):
+        scratch_counts[i] += 1
+        for j in range(count):
             scratch_counts[i + j + 1] += scratch_counts[i]
             total_cards += scratch_counts[i]
-        scratch_counts[i] = 0
+        total_cards += 1
 
     return scratch_score, total_cards
 
