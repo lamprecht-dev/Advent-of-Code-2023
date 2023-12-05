@@ -2,30 +2,58 @@ from utils import *
 
 
 def solve(d):
-    ww = words(d)
-    seeds = list(map(lambda x: int(x), ww[0][1:]))
-    seeds_p1 = []
-    seeds_p2 = []
-    for i in range(0, len(seeds)):
-        seeds_p1.append((seeds[i], 1))
-        if i % 2 == 0:
-            seeds_p2.append((seeds[i], seeds[i + 1]))
-
-    return transform_seeds(ww, seeds_p1), transform_seeds(ww, seeds_p2)
-
-
-def transform_seeds(ww, values):
     state = 0
 
-    transformations = []
+    last_values = []
+    new_values = []
 
+    ww = words(d)
     for line in ww:
         if len(line) == 0:
             state += 1
-            values = process_step(transformations, values)
+            for i in range(len(new_values)):
+                if new_values[i] is None:
+                    new_values[i] = last_values[i]
+            last_values = new_values
+            new_values = [None] * len(last_values)
+            continue
+
+        if state == 0:
+            new_values = list(map(lambda x: int(x), line[1:]))
+        elif state > 0:
+            if not line[0].isnumeric():
+                continue
+            cto, cfrom, clen = int(line[0]), int(line[1]), int(line[2])
+            for i, v in enumerate(last_values):
+                if cfrom <= v < cfrom + clen:
+                    new_values[i] = v + (cto - cfrom)
+
+    for i in range(len(new_values)):
+        if new_values[i] is None:
+            new_values[i] = last_values[i]
+
+    return min(new_values)
+
+
+def solve2(d):
+    state = 0
+
+    values = []
+    transformations = []
+
+    ww = words(d)
+    for line in ww:
+        if len(line) == 0:
+            state += 1
+            if state > 1:
+                values = process_step(transformations, values)
             transformations = []
             continue
 
+        if state == 0:
+            seeds = list(map(lambda x: int(x), line[1:]))
+            for i in range(0, len(seeds), 2):
+                values.append((seeds[i], seeds[i + 1]))
         elif state > 0:
             if not line[0].isnumeric():
                 continue
@@ -92,7 +120,7 @@ def process_step(transformations, values):
 def main():
     if test():
         file = inp(os.path.join(os.path.dirname(__file__), 'input.txt'))
-        solutions = solve(file)
+        solutions = (solve(file), solve2(file))
         print("\n\n" + BColors.HEADER + "Solutions" + BColors.ENDC)
         for s in solutions:
             print(s)
@@ -136,7 +164,7 @@ humidity-to-location map:
 56 93 4"""
     a1 = 35
     a2 = 46
-    return validate_solution(solve(s), (a1, a2))
+    return validate_solution((solve(s), solve2(s)), (a1, a2))
 
 
 main()
