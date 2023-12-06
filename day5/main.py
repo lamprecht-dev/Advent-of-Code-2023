@@ -3,7 +3,7 @@ from utils import *
 
 def solve(d):
     ww = words(d)
-    seeds = list(map(lambda x: int(x), ww[0][1:]))
+    seeds = [int(x) for x in ww[0][1:]]
     seeds_p1 = []
     seeds_p2 = []
     for i in range(0, len(seeds)):
@@ -29,7 +29,7 @@ def transform_seeds(ww, values):
 
     values = process_step(transformations, values)
 
-    return min(map(lambda x: x[0], values))
+    return min([x[0] for x in values])
 
 
 def split_range(original, transform):
@@ -94,7 +94,6 @@ def main():
             print(s)
     else:
         print("\n\n" + BColors.FAIL + "Not All Test Successful" + BColors.ENDC)
-
 
 def test():
     s = """seeds: 79 14 55 13

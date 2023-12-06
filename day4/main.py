@@ -12,8 +12,8 @@ def solve(d):
     for i, line in enumerate(ll):
         _, data = line.split(": ")
         winning, mine = data.split(" | ")
-        winning = list(map(lambda x: int(x), winning.split()))
-        mine = set(map(lambda x: int(x), mine.split()))
+        winning = [int(x) for x in winning.split()]
+        mine = {int(x) for x in mine.split()}
         count = sum(w in mine for w in winning)
         if count > 0:
             scratch_score += 2 ** (count - 1)
