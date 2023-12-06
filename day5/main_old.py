@@ -105,6 +105,7 @@ def process_step(transformations, values):
         did_transform = False
         for t in transformations:
             transformed, not_transformed = split_range(v, t)
+            print(v, t, transformed, not_transformed)
             if len(transformed) > 0:
                 did_transform = True
                 new_values.extend(transformed)

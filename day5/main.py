@@ -15,21 +15,17 @@ def solve(d):
 
 
 def transform_seeds(ww, values):
-    state = 0
-
     transformations = []
 
     for line in ww:
         if len(line) == 0:
-            state += 1
             values = process_step(transformations, values)
             transformations = []
             continue
 
-        elif state > 0:
-            if not line[0].isnumeric():
-                continue
-            transformations.append((int(line[0]), int(line[1]), int(line[2])))
+        if not line[0].isnumeric():
+            continue
+        transformations.append((int(line[0]), int(line[1]), int(line[2])))
 
     values = process_step(transformations, values)
 
