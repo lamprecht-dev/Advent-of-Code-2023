@@ -28,7 +28,7 @@ def ways_to_beat_binary_search(time, threshold):
         return 0
 
     while top - bottom > 1:
-        half = (top - bottom) // 2 + bottom
+        half = (top + bottom) // 2
         dist = half * (time - half)
 
         if dist > threshold:
