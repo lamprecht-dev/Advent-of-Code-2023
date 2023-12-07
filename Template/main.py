@@ -1,6 +1,7 @@
-import collections as coll
-import datetime as dt
-import itertools as it
+import collections
+import datetime
+import itertools
+import functools
 import math
 from operator import itemgetter as ig
 import pprint as pp
@@ -13,11 +14,9 @@ import re
 from utils import *
 
 
-def solve(d):
-    stats(d)
-    print("Input: ", repr(d))
-    t = 0
-    t2 = 0
+def s(d, part):
+    # stats(d)
+    # print("Input: ", repr(d))
 
     # nums = ints(d)
 
@@ -27,25 +26,25 @@ def solve(d):
     # ww = words(d)
     # for line in ww:
 
-
-    return t, t2
+    return 0
 
 
 def main():
     if test():
-        solutions = solve(inp(os.path.join(os.path.dirname(__file__), 'input.txt')))
+        file = inp(os.path.join(os.path.dirname(__file__), 'input.txt'))
+        solutions = (s(file, 1), s(file, 2))
         print("\n\n" + BColors.HEADER + "Solutions" + BColors.ENDC)
-        for s in solutions:
-            print(s)
+        for sol in solutions:
+            print(sol)
     else:
         print("\n\n" + BColors.FAIL + "Not All Test Successful" + BColors.ENDC)
 
 
 def test():
-    s = """"""
+    example = """"""
     a1 = None
     a2 = None
-    return validate_solution(solve(s), (a1, a2))
+    return validate_solution((s(example, 1), s(example, 2)), (a1, a2))
 
 
 main()

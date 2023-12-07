@@ -1,4 +1,4 @@
-import collections as coll
+import collections
 import functools
 from utils import *
 
@@ -7,19 +7,18 @@ hand_values = ["A", "K", "Q", "J", "T", "9", "8", "7", "6", "5", "4", "3", "2", 
 
 def solve(d, part):
     global hand_values
-    winnings = 0
-
-    hands = []
 
     if part == 2:
         hand_values = ["A", "K", "Q", "T", "9", "8", "7", "6", "5", "4", "3", "2", "1", "J"]
 
+    hands = []
     ww = words(d)
     for line in ww:
         hands.append((hand_type(line[0], part), line[0], int(line[1])))
 
     hands.sort(key=functools.cmp_to_key(sort_hand))
 
+    winnings = 0
     for i, h in enumerate(hands):
         winnings += (i + 1) * h[2]
 
@@ -43,8 +42,8 @@ def sort_hand(a, b):
 
 
 def hand_type(hand, part):
-    # 5, 4, f, 3, 2p, 1p, 0
-    c = coll.Counter(hand)
+    # 5, 4, f, 3, 2p, 1p, h
+    c = collections.Counter(hand)
 
     if part == 2:
         mc = c.most_common(5)
