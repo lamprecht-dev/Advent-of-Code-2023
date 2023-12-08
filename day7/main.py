@@ -18,11 +18,7 @@ def solve(d, part):
 
     hands.sort(key=functools.cmp_to_key(sort_hand))
 
-    winnings = 0
-    for i, h in enumerate(hands):
-        winnings += (i + 1) * h[2]
-
-    return winnings
+    return sum([(el[0] + 1) * el[1][2] for el in enumerate(hands)])
 
 
 def sort_hand(a, b):
