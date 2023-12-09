@@ -15,6 +15,8 @@ from utils import *
 
 
 def s(d, part):
+    if part == 2:
+        return 0
     # stats(d)
     # print("Input: ", repr(d))
 
