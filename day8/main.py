@@ -6,7 +6,6 @@ from utils import *
 def s(d):
     ll = lines(d)
     ins = [0 if c == "L" else 1 for c in ll[0]]
-    ins2 = []
 
     directions = {}
 
@@ -15,16 +14,15 @@ def s(d):
         directions[direction[0]] = direction[1].strip("()").split(", ")
 
     steps = 0
+    ins_point = 0
     cur = "AAA"
     tar = "ZZZ"
     while cur != tar:
-        i = ins.pop(0)
+        i = ins[ins_point % len(ins)]
         cur = directions[cur][i]
 
         steps += 1
-        ins2.append(i)
-        if len(ins) == 0:
-            ins = ins2
+        ins_point += 1
 
     return steps
 
@@ -40,41 +38,25 @@ def s2(d):
         directions[direction[0]] = direction[1].strip("()").split(", ")
 
     zmap = {}
-    gcur = {}
 
     for d in directions:
-        phasemap = {}
-        if d[2] == "Z" or d[2] == "A":
-            seen = set()
+        if d[2] == "Z":
             cur = d
             s = 0
             tempins = ins[:]
-            tempins2 = []
+            temp_pointer = 0
             while True:
-                t = tempins.pop(0)
+                t = tempins[temp_pointer % len(tempins)]
                 cur = directions[cur][t]
 
-                if (s % len(ins), cur) in seen:
-                    s = -1
-                    break
-                seen.add((s % len(ins), cur))
-
                 s += 1
-                tempins2.append(t)
-                if len(tempins) == 0:
-                    tempins = tempins2
+                temp_pointer += 1
 
                 if cur[2] == "Z":
                     break
 
             if d[2] == "Z":
-                zmap[d] = (s, cur, s % len(ins))
-
-            if d[2] == "A":
-                gcur[d] = (s, cur, s % len(ins))
-
-    # pp.pprint(gcur)
-    # pp.pprint(zmap['11Z'][0])
+                zmap[d] = (s, cur)
 
     # return general_solution_attempt(cur, zmap, len(inp))
 
@@ -83,34 +65,6 @@ def s2(d):
 
     return math.lcm(*[zmap[x][0] for x in zmap])
 
-
-def general_solution_attempt(cur, zmap, phase_length):
-    steps = 0
-
-    while not in_sync(cur):
-        smallest = None
-        for i in cur:
-            c = cur[i]
-            if smallest is None or cur[smallest][0] > c[0]:
-                smallest = i
-        sv = cur[smallest]
-
-        new_value = zmap[sv[1]][sv[0] % phase_length]
-        cur[smallest] = (new_value[0] + sv[0], new_value[1])
-        steps = new_value[0] + sv[0]
-
-    return steps
-
-
-def in_sync(states):
-    first = None
-    for s in states:
-        st = states[s]
-        if first is None:
-            first = st[0]
-        elif first != st[0]:
-            return False
-    return True
 
 def main():
     if test():

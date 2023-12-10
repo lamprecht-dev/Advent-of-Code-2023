@@ -52,9 +52,9 @@ def srec(d, part):
 
 def next_value(values, part):
     # Realize we only care about the last/first value anyway in all cases
-    next_values = [values[i + 1] - values[i] for i in range(len(values) - 1)]
+    differences = [values[i + 1] - values[i] for i in range(len(values) - 1)]
     if any(x != 0 for x in values):
-        return values[part - 2] + (next_value(next_values, part) * (1 if part == 1 else - 1))
+        return values[part - 2] + (next_value(differences, part) * (1 if part == 1 else - 1))
     return 0
 
 
