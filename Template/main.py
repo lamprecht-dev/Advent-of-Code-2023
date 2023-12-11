@@ -1,3 +1,4 @@
+import sys
 import collections
 import datetime
 import itertools
@@ -8,9 +9,9 @@ import pprint as pp
 import re
 # import bisect
 # import heapq
-# import sys
 # sys.setrecursionlimit(1000000)
 
+sys.path.append('../')
 from utils import *
 
 

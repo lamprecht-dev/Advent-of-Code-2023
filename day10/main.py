@@ -1,143 +1,144 @@
-import collections
-import datetime
-import itertools
-import functools
-import math
-from operator import itemgetter as ig
-import pprint as pp
-import re
-# import bisect
-# import heapq
-# import sys
-# sys.setrecursionlimit(1000000)
-
+import sys
+sys.path.append('../')
 from utils import *
 
 
 def s(d):
-    start = None
     ll = lines(d)
-    for r, line in enumerate(ll):
-        if start is not None:
+    loop_items = find_loop(ll)
+    ll = sanitize_grid(ll, loop_items)
+    inside_count = count_inside(ll)
+
+    return len(loop_items) // 2, inside_count
+
+
+class DisjSet:
+    def __init__(self, rows, cols):
+        self.parent = [i for i in range(rows * cols)]
+        self.rows = rows
+
+    def find(self, el):
+        if not isinstance(el, int):
+            el = el[0] * self.rows + el[1]
+        if self.parent[el] is not el:
+            self.parent[el] = self.find(self.parent[el])  # Path Shortening
+
+        return self.parent[el]
+
+    def union(self, a, b):
+        pa = self.find(a)
+        pb = self.find(b)
+        if pa == pb:
+            return False
+        self.parent[pa] = pb
+        return self.parent[pa]
+
+    def get_all(self, el):
+        el = self.find(el)
+        return [(i // self.rows, i % self.rows) for i in range(len(self.parent)) if self.find(i) == el]
+
+
+def find_loop(ll):
+    ds = DisjSet(len(ll), len(ll[0]))
+    loop_items = []
+    for r, l in enumerate(ll):
+        for c, ch in enumerate(l):
+            # Only union top and right.
+            true_neighbors = get_true_neighbor((c, r), ll)
+            for tni in true_neighbors:
+                tn = true_neighbors[tni]
+                if tni in ["r", "u"]:
+                    could_union = ds.union((c, r), tn)
+                    if could_union is False:
+                        loop_items = ds.get_all(tn)
+    return loop_items
+
+
+def sanitize_grid(ll, loop_items):
+    # Find and replace S
+    S_dirs = set()
+    S_coord = None
+    for r, l in enumerate(ll):
+        for c, ch in enumerate(l):
+            # Empty anything non-loop
+            if (c, r) not in loop_items:
+                ll[r] = ll[r][:c] + "." + ll[r][c + 1:]
+
+            if ch != "S":
+                continue
+            S_coord = (c, r)
+            true_neighbors = get_true_neighbor((c, r), ll)
+            for tni in true_neighbors:
+                tn = true_neighbors[tni]
+                if tn in loop_items:
+                    S_dirs.add(tni)
+    for d in "|-7LFJ":
+        if get_directions(d) == S_dirs:
+            ll[S_coord[1]] = ll[S_coord[1]][:S_coord[0]] + d + ll[S_coord[1]][S_coord[0] + 1:]
             break
-        for c, ca in enumerate(line):
-            if ca == "S":
-                start = (c, r)
-                break
+    return ll
 
-    first_pipe = traverse(start, ll, 1)
-    loop_pipes = traverse(first_pipe, ll, 2)
-    s_types = ["|", "-", "J", "F", "7", "L"]
-    s_dirs = []
-    for di in dirs:
-        d = dirs[di]
-        nc, nr = start[0] + d[0], start[1] + d[1]
-        if (nc, nr) in loop_pipes:
-            s_dirs.append(di)
 
-    print(s_dirs)
-
-    inside_loop = 0
-
-    # nll = []
-    # for l in ll:
-    #     print(l)
-    #
-    # print()
-    # for r, l in enumerate(ll):
-    #     row = ""
-    #     for c, ch in enumerate(l):
-    #         if (c, r) in loop_pipes:
-    #             row += ch
-    #         else:
-    #             row += " "
-    #     nll.append(row)
-    #     print(row)
-    #
-    # print()
-
-    for r in range(len(ll)):
+def count_inside(ll):
+    inside_count = 0
+    for r, l in enumerate(ll):
         inside = False
-
-        for c in range(len(ll[0])):
-            if (c, r) not in loop_pipes:
-                inside_loop += inside
-                continue
-
-            # if ll[r][c] == ""
-
-
-            if (c, r) in loop_pipes:
-                continue
-            count = 0
-            for rr in range(r):
-                if (c, rr) in loop_pipes and ll[rr][c] == "-":
-                    count += 1
-            if count % 2 == 0:
-                continue
-            count = 0
-            for cc in range(c):
-                if (cc, r) in loop_pipes and ll[r][cc] == "|":
-                    count += 1
-            if count % 2 == 1:
-                inside_loop += 1
-
-
-    return len(loop_pipes) // 2, inside_loop
-
-
-def traverse(start, ll, part):
-    seen = set()
-    to_see = collections.deque()
-    to_see.append(start)
-    loop_found = False
-
-    while len(to_see) > 0:
-        seeing = to_see.popleft()
-
-        p_dirs = get_directions(ll[seeing[1]][seeing[0]])
-        for di in p_dirs:
-            d = dirs[di]
-            nc, nr = d[0] + seeing[0], d[1] + seeing[1]
-            if (nc, nr) in seen:
-                continue
-            if nc < 0 or nr < 0 or nr >= len(ll) or nc >= len(ll[0]):
-                continue
-
-            p_dirs2 = get_directions(ll[nr][nc])
-            for di2 in p_dirs2:
-                d2 = dirs[di2]
-                d2n = (d2[0] * -1, d2[1] * -1)
-                if d2n != d:
-                    continue
-
-                if (nc, nr) in to_see:
-                    if part == 1:
-                        return nc, nr
-                    loop_found = True
-                to_see.append((nc, nr))
-
-        seen.add(seeing)
-    assert loop_found
-    return seen
+        for c, ch in enumerate(l):
+            if ch == ".":
+                inside_count += inside
+            elif ch in "|JL":
+                inside = not inside
+    return inside_count
 
 
 def get_directions(pipe):
     if pipe == "S":
-        return ["u", "d", "r", "l"]
+        return {"u", "d", "r", "l"}
     if pipe == "|":
-        return ["u", "d"]
+        return {"u", "d"}
     if pipe == "-":
-        return ["r", "l"]
+        return {"r", "l"}
     if pipe == "F":
-        return ["r", "d"]
+        return {"r", "d"}
     if pipe == "L":
-        return ["r", "u"]
+        return {"r", "u"}
     if pipe == "J":
-        return ["u", "l"]
+        return {"u", "l"}
     if pipe == "7":
-        return ["d", "l"]
-    return []
+        return {"d", "l"}
+    return {}
+
+
+def get_neighbors(loc, ll):
+    neighbors = {}
+    for di in get_directions(ll[loc[1]][loc[0]]):
+        d = dirs[di]
+        nc, nr = loc[0] + d[0], loc[1] + d[1]
+        if not (0 <= nc < len(ll[0]) and 0 <= nr < len(ll)):
+            continue
+        neighbors[di] = (nc, nr)
+    return neighbors
+
+
+def get_true_neighbor(loc, ll):
+    neighbors = get_neighbors(loc, ll)
+    true_neighbors = {}
+    for n in neighbors:
+        nc, nr = neighbors[n]
+        neighbors_neighbors = get_neighbors((nc, nr), ll)
+        for nn in neighbors_neighbors:
+            if does_fit(n, nn):
+                true_neighbors[n] = (nc, nr)
+    return true_neighbors
+
+
+def does_fit(a, b):
+    if (a == "r" and b == "l" or
+            a == "l" and b == "r" or
+            a == "u" and b == "d" or
+            a == "d" and b == "u"):
+        return True
+    return False
 
 
 def main():
@@ -170,9 +171,5 @@ L7JLJL-JLJLJL--JLJ.L"""
     a1 = 8
     a2 = 10
     return validate_solution((s(example)[0], s(example2)[1]), (a1, a2))
-
-
-# 3769 too high
-# 45
 
 main()
