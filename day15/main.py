@@ -11,16 +11,14 @@ def s(d):
     boxes = collections.defaultdict(dict)
     for w in ww:
         hash_value = hashing_value(w)
-        lens_value = hashing_value(w[:w.index("=") if "=" in w else w.index("-")])
 
         if "=" in w:
-            lens_focus = int(w[w.index("=")+1:])
-            lens_name = w[:w.index("=")]
-            boxes[lens_value][lens_name] = lens_focus
+            lens_name, lens_focus = w.split("=")
+            boxes[hashing_value(lens_name)][lens_name] = int(lens_focus)
         else:
             lens_name = w[:w.index("-")]
-            if lens_name in boxes[lens_value]:
-                del boxes[lens_value][lens_name]
+            if lens_name in boxes[hashing_value(lens_name)]:
+                del boxes[hashing_value(lens_name)][lens_name]
         hash_sum += hash_value
 
     focusing_power = 0
