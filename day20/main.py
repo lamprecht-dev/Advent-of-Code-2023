@@ -1,5 +1,6 @@
 import sys
 import collections
+import pygraphviz as pgv
 import datetime
 import itertools
 import functools
@@ -16,6 +17,8 @@ from utils import *
 
 
 def s(d, part):
+    if part == 2:
+        return 0
     ll = lines(d)
     broadcaster_targets = []
     flip_flops = {}
@@ -41,6 +44,8 @@ def s(d, part):
         for i in inputs[co]:
             conjunctions[co]["in"][i] = "low"
 
+    render_graph(broadcaster_targets, flip_flops, conjunctions, inputs)
+
     # action: target, pulse
     pulse_sum = (0, 0)
     if part == 1:
@@ -56,6 +61,10 @@ def s(d, part):
             i += 1
 
     return pulse_sum[0] * pulse_sum[1]
+
+
+def render_graph(broadcaster_targets, flip_flops, conjunctions, inputs):
+    G = pgv.AGraph()
 
 
 def press_button(broadcaster_targets, flip_flops, conjunctions):
