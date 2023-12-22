@@ -85,67 +85,81 @@ class Brick:
         return False
 
 
-def s(d, part):
-    if part == 2:
-        return 0
-
+def s(d):
+    # Prep Lists
+    bricks_by_height = collections.defaultdict(list)
+    available_heights = set()
     ll = lines(d)
+    for l in ll:
+        b = [[int(b) for b in l1.split(",")] for l1 in l.split("~")]
+        assert not (b[0][0] > b[1][0] or b[0][1] > b[1][1] or b[0][2] > b[1][2])    # Making sure its already sorted
 
-    height_map = collections.defaultdict(int)
-    height = collections.defaultdict(list)
-    heights = []
-    for line in ll:
-        brick = Brick(*line.split("~"))
-        height[brick.pfrom[2]].append(brick)
-        heights.append(brick.pfrom[2])
+        bricks_by_height[b[0][2]].append(b)
+        available_heights.add(b[0][2])
 
-    heights.sort()
-    new_height = collections.defaultdict(list)
-    new_heights = set()
-    for h in heights:
-        for b in height[h]:
-            height_map, nh, b = b.move_down(height_map)
-            new_height[nh].append(b)
-            new_heights.add(nh)
+    available_heights = list(available_heights)
+    available_heights.sort()
 
-    new_heights = list(new_heights)
-    new_heights.sort()
-    height_map = collections.defaultdict(int)   # Reset
-
-    bricks_touching = collections.defaultdict(list)
-    all_locations = set()
-    for h in new_heights:
-        for i in range(len(new_height[h])):
-            b = new_height[h][i]
-            b.print()
-            print(h, i)
-            for j in range(len(new_height[b.pto[2] + 1])):
-                b2 = new_height[b.pto[2] + 1][j]
-                if b.overlap(b2):
-                    bricks_touching[(b.pto[2] + 1, j)].append((h, i))
-            all_locations.add((h, i))
-
-    # pp.pprint(bricks_touching)
-    # print(all_locations, len(all_locations))
+    bricks_by_height, available_heights, _ = move_down(bricks_by_height, available_heights)
     all_shots = 0
-    for loc in all_locations:
-        can_shoot = True
-        for bt in bricks_touching:
-            if loc in bricks_touching[bt] and len(bricks_touching[bt]) == 1:
-                # print(loc, bt, bricks_touching[bt])
-                can_shoot = False
-                break
+    chain_reaction = 0
 
-        if can_shoot:
-            all_shots += 1
+    for h in available_heights:
+        for i in range(len(bricks_by_height[h])):
+            bbh = copy.deepcopy(bricks_by_height)
+            bbh[h].pop(i)
 
-    return all_shots
+            _, _, count_move = move_down(bbh, available_heights)
+            if count_move == 0:
+                all_shots += 1
+            else:
+                chain_reaction += count_move
+
+    return all_shots, chain_reaction
+
+
+def move_down(bricks_by_height, available_heights):
+    count_move = 0
+    height_map = collections.defaultdict(int)
+    bricks_by_height2 = collections.defaultdict(list)
+    available_heights2 = set()
+
+    for h in available_heights:
+        for i in range(len(bricks_by_height[h])):
+            b = bricks_by_height[h][i]
+            diff = move_diff(b, height_map)
+            if diff > 0:
+                count_move += 1
+            nb = [[*b[0][:2], b[0][2] - diff], [*b[1][:2], b[1][2] - diff]]
+            bricks_by_height2[nb[0][2]].append(nb)
+            available_heights2.add(nb[0][2])
+            height_map = edit_height_map(nb, height_map)
+
+    available_heights2 = list(available_heights2)
+    available_heights2.sort()
+    return bricks_by_height2, available_heights2, count_move
+
+
+def edit_height_map(b, height_map):
+    for x in range(b[0][0], b[1][0] + 1):
+        for y in range(b[0][1], b[1][1] + 1):
+            height_map[(x, y)] = max(height_map[(x, y)], b[1][2])
+    return height_map
+
+
+def move_diff(b, height_map):
+    highest_point = 0
+    for x in range(b[0][0], b[1][0] + 1):
+        for y in range(b[0][1], b[1][1] + 1):
+            highest_point = max(height_map[(x, y)], highest_point)
+
+    return b[0][2] - highest_point - 1
 
 
 def main():
     if test():
         file = inp(os.path.join(os.path.dirname(__file__), 'input.txt'))
-        solutions = (s(file, 1), s(file, 2))
+        solutions = s(file)
         print("\n\n" + BColors.HEADER + "Solutions" + BColors.ENDC)
         for sol in solutions:
             print(sol)
@@ -162,12 +176,8 @@ def test():
 0,1,6~2,1,6
 1,1,8~1,1,9"""
     a1 = 5
-    a2 = None
-    return validate_solution((s(example, 1), s(example, 2)), (a1, a2))
+    a2 = 7
+    return validate_solution(s(example), (a1, a2))
 
 
 main()
-
-
-# 6514
-# SHOULD BE 463
