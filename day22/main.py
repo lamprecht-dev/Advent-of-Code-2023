@@ -21,10 +21,12 @@ def s(d):
     available_heights = list(available_heights)
     available_heights.sort()
 
+    # Have all bricks fall down
     bricks_by_height, available_heights, _ = move_down(bricks_by_height, available_heights)
     all_shots = 0
     chain_reaction = 0
 
+    # Do the calculation to sovle p1 and p2
     for h in available_heights:
         for i in range(len(bricks_by_height[h])):
             bbh = copy.deepcopy(bricks_by_height)
