@@ -1,25 +1,11 @@
 import sys
-import collections
-import datetime
-import itertools
-import functools
-import math
-from operator import itemgetter as ig
-import pprint as pp
-import re
-import numpy as np
-# import bisect
-# import heapq
-# sys.setrecursionlimit(1000000)
+import sympy
 
 sys.path.append('../')
 from utils import *
 
 
-def s(d, part, search_range=(200000000000000, 400000000000000)):
-    if part == 2:
-        return 0
-
+def part1(d, search_range=(200000000000000, 400000000000000)):
     paths = []
 
     ll = lines(d)
@@ -56,10 +42,38 @@ def s(d, part, search_range=(200000000000000, 400000000000000)):
     return count_test_encounter
 
 
+def part2(d):
+    ll = lines(d)
+    paths = []
+    for line in ll:
+        pos, direction = line.split(" @ ")
+        pos = [int(p) for p in pos.split(", ")]
+        direction = [int(di) for di in direction.split(", ")]
+
+        paths.append((pos, direction))
+
+    # This is what we are solving for
+    rockx, rocky, rockz, rockVx, rockVy, rockVz = sympy.symbols("rockx, rocky, rockz, rockVx, rockVy, rockVz")
+
+    sympy_functions = []
+    for p in paths:
+        # These we know from the storms
+        (x, y, z), (vx, vy, vz) = p
+        # Sympy should use these functions to calculate the solutions for our symbols
+        sympy_functions.append((rockx - x) * (vy - rockVy) - (rocky - y) * (vx - rockVx))
+        sympy_functions.append((rockz - z) * (vy - rockVy) - (rocky - y) * (vz - rockVz))
+
+    answer = sympy.solve(sympy_functions)
+    assert len(answer) == 1
+    print(answer[0])
+
+    return answer[0][rockx] + answer[0][rocky] + answer[0][rockz]
+
+
 def main():
     if test():
         file = inp(os.path.join(os.path.dirname(__file__), 'input.txt'))
-        solutions = (s(file, 1), s(file, 2))
+        solutions = (part1(file), part2(file))
         print("\n\n" + BColors.HEADER + "Solutions" + BColors.ENDC)
         for sol in solutions:
             print(sol)
@@ -75,7 +89,7 @@ def test():
 20, 19, 15 @  1, -5, -3"""
     a1 = 2
     a2 = 47
-    return validate_solution((s(example, 1, (7, 27)), s(example, 2)), (a1, a2))
+    return validate_solution((part1(example, (7, 27)), part2(example)), (a1, a2))
 
 
 main()

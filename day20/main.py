@@ -1,101 +1,77 @@
 import sys
 import collections
-import pygraphviz as pgv
-import datetime
-import itertools
-import functools
-import math
-from operator import itemgetter as ig
-import pprint as pp
-import re
-# import bisect
-# import heapq
-# sys.setrecursionlimit(1000000)
+import numpy as np
+import random
 
 sys.path.append('../')
 from utils import *
 
 
 def s(d, part):
-    if part == 2:
-        return 0
+    modules = {}    # type, memory, targets
     ll = lines(d)
-    broadcaster_targets = []
-    flip_flops = {}
-    conjunctions = {}
+    rxmodule = None
+    for l in ll:
+        mod, targets = l.split(" -> ")
+        if mod == "broadcaster":
+            modules["broadcaster"] = ["bc", None, targets.split(", ")]
+        elif mod.startswith("%"):
+            modules[mod[1:]] = ["ff", False, targets.split(", ")]
+        elif mod.startswith("&"):
+            modules[mod[1:]] = ["con", {}, targets.split(", ")]
 
-    inputs = collections.defaultdict(list)
-    for line in ll:
-        action, target = line.split("->")
-        if action.strip() == "broadcaster":
-            broadcaster_targets = target.strip().split(", ")
-        elif "%" in action:
-            ts = target.strip().split(", ")
-            for t in ts:
-                inputs[t].append(action.strip()[1:])
-            flip_flops[action.strip()[1:]] = {'targets': ts, 'state': "low"}
-        elif "&" in action:
-            ts = target.strip().split(", ")
-            for t in ts:
-                inputs[t].append(action.strip()[1:])
-            conjunctions[action.strip()[1:]] = {"targets": ts, "in": {}}
+        if part == 2 and "rx" in targets.split(", "):
+            rxmodule = mod[1:]
 
-    for co in conjunctions:
-        for i in inputs[co]:
-            conjunctions[co]["in"][i] = "low"
+    # Fill the con memory:
+    for m in modules:
+        for target in modules[m][2]:
+            if target in modules and modules[target][0] == "con":
+                modules[target][1][m] = False
 
-    render_graph(broadcaster_targets, flip_flops, conjunctions, inputs)
+    low, high = 0, 0
+    button_presses = 0
+    cycles = {}
+    while True:
+        if part == 1 and button_presses == 1000:
+            break
+        # elif part == 2 and button_presses == 100000:
+        #     break
+        button_presses += 1
+        next = collections.deque([("broadcaster", False, "button")])
+        while next:
+            n, p, f = next.popleft()
+            if p:
+                high += 1
+            else:
+                low += 1
+            if n not in modules:
+                continue
+            m = modules[n]
 
-    # action: target, pulse
-    pulse_sum = (0, 0)
-    if part == 1:
-        for i in range(1000):
-            pulses, broadcaster_targets, flip_flops, conjunctions, rx = press_button(broadcaster_targets, flip_flops, conjunctions)
-            pulse_sum = (pulse_sum[0] + pulses[0], pulse_sum[1] + pulses[1])
-    else:
-        i = 1
-        while True:
-            pulses, broadcaster_targets, flip_flops, conjunctions, rx = press_button(broadcaster_targets, flip_flops, conjunctions)
-            if rx:
-                return i
-            i += 1
+            if n == rxmodule and p and part == 2:
+                if f not in cycles:
+                    cycles[f] = button_presses
+                if len(cycles) == 4:    # I know its four inputs. Really I should be checking for this count but its fine
+                    return math.lcm(*cycles.values())
 
-    return pulse_sum[0] * pulse_sum[1]
+            if m[0] == "ff":
+                if not p:
+                    m[1] = not m[1]
+                    for t in m[2]:
+                        next.append((t, m[1], n))
+            elif m[0] == "con":
+                m[1][f] = p
+                sp = not all(m[1].values())
+                for t in m[2]:
+                    next.append((t, sp, n))
+            elif m[0] == "bc":
+                for t in m[2]:
+                    next.append((t, p, n))
+            else:
+                assert False
 
-
-def render_graph(broadcaster_targets, flip_flops, conjunctions, inputs):
-    G = pgv.AGraph()
-
-
-def press_button(broadcaster_targets, flip_flops, conjunctions):
-    pulses = [0, 0]
-    actions = collections.deque()
-    actions.append(("broadcaster", "low", "button"))
-    count_rx = 0
-    while len(actions) > 0:
-        a = actions.popleft()
-        if a[0] == "rx":
-            count_rx += 1
-        if a[1] == "low":
-            pulses[0] += 1
-        else:
-            pulses[1] += 1
-
-        if a[0] == "broadcaster":
-            for t in broadcaster_targets:
-                actions.append((t, a[1], "broadcaster"))
-            continue
-        if a[1] == "low" and a[0] in flip_flops:
-            flip_flops[a[0]]['state'] = "low" if flip_flops[a[0]]['state'] == "high" else "high"
-            for t in flip_flops[a[0]]['targets']:
-                actions.append((t, flip_flops[a[0]]['state'], a[0]))
-
-        if a[0] in conjunctions:
-            conjunctions[a[0]]['in'][a[2]] = a[1]
-            all_high = all([conjunctions[a[0]]['in'][i] == "high" for i in conjunctions[a[0]]['in']])
-            for t in conjunctions[a[0]]['targets']:
-                actions.append((t, "low" if all_high else "high", a[0]))
-    return pulses, broadcaster_targets, flip_flops, conjunctions, count_rx == 1
+    return low * high
 
 
 def main():
